@@ -52,7 +52,7 @@ python gui.py
 
 1. Enter the base name for the keys.
 2. Select the output directory.
-3. Click on "Generate Keys".
+3. Click on "Next".
 
 Two files will be created in the selected directory:
 - `<name>_private.pem`
