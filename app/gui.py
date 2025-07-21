@@ -62,6 +62,8 @@ class KeyGenPage(QWizardPage):
         self.generated_priv_path = None
         self.generated_pub_path = None
         self.generated_private_key = None
+        self.generated_priv_pkcs8_path = None
+        self.generated_private_key_pkcs8 = None
         self.registerField("key_name*", self.name_input)
         self.registerField("output_dir*", self.dir_input)
 
@@ -79,14 +81,17 @@ class KeyGenPage(QWizardPage):
         try:
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-            priv_path, pub_path = generate_rsa_keypair(key_name, output_dir)
+            priv_path, pub_path, priv_pkcs8_path = generate_rsa_keypair(key_name, output_dir)
             self.generated_key_name = key_name
             self.generated_priv_path = priv_path
             self.generated_pub_path = pub_path
+            self.generated_priv_pkcs8_path = priv_pkcs8_path
             with open(pub_path, 'r') as f:
                 self.generated_public_key = f.read()
             with open(priv_path, 'r') as f:
                 self.generated_private_key = f.read()
+            with open(priv_pkcs8_path, 'r') as f:
+                self.generated_private_key_pkcs8 = f.read()
             return True
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while generating the keys:\n{e}")
@@ -141,7 +146,7 @@ class DDLPage(QWizardPage):
 
         ddl_layout.addLayout(btn_layout)
         self.ddl_tab.setLayout(ddl_layout)
-        self.tabs.addTab(self.ddl_tab, "DDL")
+        self.tabs.addTab(self.ddl_tab, "Snowflake DDL (Public)")
 
         # Secret Tab
         self.secret_tab = QWidget()
@@ -165,7 +170,31 @@ class DDLPage(QWizardPage):
 
         secret_layout.addLayout(secret_btn_layout)
         self.secret_tab.setLayout(secret_layout)
-        self.tabs.addTab(self.secret_tab, "Secret")
+        self.tabs.addTab(self.secret_tab, "PEM (Private)")
+
+        # PKCS8 Tab
+        self.pkcs8_tab = QWidget()
+        pkcs8_layout = QVBoxLayout()
+        self.pkcs8_edit = QTextEdit()
+        self.pkcs8_edit.setReadOnly(True)
+        pkcs8_layout.addWidget(self.pkcs8_edit)
+        # Botones (refresh y copy) para PKCS8
+        pkcs8_btn_layout = QHBoxLayout()
+        self.pkcs8_refresh_btn = QPushButton()
+        self.pkcs8_refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
+        self.pkcs8_refresh_btn.setToolTip("Refresh PKCS8 JSON")
+        self.pkcs8_refresh_btn.clicked.connect(self.generate_pkcs8_json)
+        pkcs8_btn_layout.addWidget(self.pkcs8_refresh_btn)
+
+        self.pkcs8_copy_btn = QPushButton()
+        self.pkcs8_copy_btn.setIcon(QIcon.fromTheme("edit-copy"))
+        self.pkcs8_copy_btn.setToolTip("Copy to clipboard")
+        self.pkcs8_copy_btn.clicked.connect(self.copy_pkcs8_to_clipboard)
+        pkcs8_btn_layout.addWidget(self.pkcs8_copy_btn)
+
+        pkcs8_layout.addLayout(pkcs8_btn_layout)
+        self.pkcs8_tab.setLayout(pkcs8_layout)
+        self.tabs.addTab(self.pkcs8_tab, "PKCS8 (Private)")
 
         layout.addWidget(self.tabs)
         self.setLayout(layout)
@@ -175,6 +204,7 @@ class DDLPage(QWizardPage):
         self.user_input.setText(self.keygen_page.generated_key_name or "")
         self.generate_ddl()
         self.generate_secret()
+        self.generate_pkcs8_json()
 
     def generate_ddl(self):
         user = self.user_input.text().strip()
@@ -207,6 +237,21 @@ class DDLPage(QWizardPage):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.secret_edit.toPlainText(), QClipboard.Clipboard)
         QMessageBox.information(self, "Copied!", "Secret JSON copied to clipboard.")
+
+    def generate_pkcs8_json(self):
+        user = self.keygen_page.generated_key_name or ""
+        pkcs8 = self.keygen_page.generated_private_key_pkcs8 or ""
+        pkcs8_json = {
+            "user": user,
+            "private_key_pkcs8": pkcs8
+        }
+        pretty_json = json.dumps(pkcs8_json, indent=2, sort_keys=True)
+        self.pkcs8_edit.setPlainText(pretty_json)
+
+    def copy_pkcs8_to_clipboard(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.pkcs8_edit.toPlainText(), QClipboard.Clipboard)
+        QMessageBox.information(self, "Copied!", "PKCS8 JSON copied to clipboard.")
 
 def main():
     app = QApplication(sys.argv)

@@ -2,7 +2,8 @@
 .vscode/
 **/output_keys/
 # Python intermediate files
-__pycache__/
+**/__pycache__/*.pyc
 *.pyc
 *.pyo
 *.pyd
+.DS_Store
