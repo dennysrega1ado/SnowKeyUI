@@ -37,7 +37,7 @@ def generate_rsa_keypair(key_name: str, output_dir: str):
 
     # Guardar los archivos
     priv_path = os.path.join(output_dir, f"{key_name}_private.pem")
-    priv_pkcs8_path = os.path.join(output_dir, f"{key_name}_private_pkcs8.pem")
+    priv_pkcs8_path = os.path.join(output_dir, f"{key_name}_private.p8")
     pub_path = os.path.join(output_dir, f"{key_name}_public.pem")
     with open(priv_path, 'wb') as f:
         f.write(private_pem)
